@@ -193,3 +193,7 @@ else:
 
     st.altair_chart(chart, use_container_width=True)
     st.markdown(f"**총 투표 수:** {agg['count'].sum()}명")
+
+if st.button("🔄 결과 새로고침"):
+    st.cache_data.clear()
+    st.rerun()
