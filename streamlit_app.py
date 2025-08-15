@@ -109,87 +109,87 @@ st.dataframe(df1)
 # 5️⃣ 시나리오 4: 🎼 청중 DJ 투표 시스템 (한 사람당 1회만 투표)
 ##########################################################
 
-# import streamlit as st
-# import gspread
-# import pandas as pd
-# from google.oauth2.service_account import Credentials
-# from datetime import datetime
-# import uuid
-# import altair as alt
+import streamlit as st
+import gspread
+import pandas as pd
+from google.oauth2.service_account import Credentials
+from datetime import datetime
+import uuid
+import altair as alt
 
-# st.set_page_config(page_title="청중 DJ 투표", layout="wide")
-# st.title("5️⃣ 🎼 청중 DJ — 오늘의 배경음악 투표")
-# st.info("🙋‍♀️ 한 사람당 한 번만 투표 가능하며, 실시간 투표 결과를 원그래프로 확인할 수 있습니다!")
+st.set_page_config(page_title="청중 DJ 투표", layout="wide")
+st.title("5️⃣ 🎼 청중 DJ — 오늘의 배경음악 투표")
+st.info("🙋‍♀️ 한 사람당 한 번만 투표 가능하며, 실시간 투표 결과를 원그래프로 확인할 수 있습니다!")
 
-# # 🎵 장르 선택지
-# OPTIONS = {
-#     "🎧 Chill": "Chill",
-#     "🔥 EDM": "EDM",
-#     "🧘‍♂️ Classic": "Classic",
-#     "🕺 Funk": "Funk"
-# }
+# 🎵 장르 선택지
+OPTIONS = {
+    "🎧 Chill": "Chill",
+    "🔥 EDM": "EDM",
+    "🧘‍♂️ Classic": "Classic",
+    "🕺 Funk": "Funk"
+}
 
-# # 인증
-# SCOPES = [
-#     "https://www.googleapis.com/auth/spreadsheets",
-#     "https://www.googleapis.com/auth/drive"
-# ]
-# credentials = Credentials.from_service_account_info(
-#     st.secrets["google_service_account"],
-#     scopes=SCOPES
-# )
-# gc = gspread.authorize(credentials)
-# sheet = gc.open_by_key(st.secrets["gsheet_key"]).worksheet("bgm")
+# 인증
+SCOPES = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive"
+]
+credentials = Credentials.from_service_account_info(
+    st.secrets["google_service_account"],
+    scopes=SCOPES
+)
+gc = gspread.authorize(credentials)
+sheet = gc.open_by_key(st.secrets["gsheet_key"]).worksheet("bgm")
 
-# # 사용자 고유 ID
-# if "client_id" not in st.session_state:
-#     st.session_state["client_id"] = str(uuid.uuid4())[:8]
-# client_id = st.session_state["client_id"]
+# 사용자 고유 ID
+if "client_id" not in st.session_state:
+    st.session_state["client_id"] = str(uuid.uuid4())[:8]
+client_id = st.session_state["client_id"]
 
-# # 기존 투표 불러오기
-# @st.cache_data(ttl=2)
-# def load_votes():
-#     rows = sheet.get_all_records()
-#     df = pd.DataFrame(rows)
-#     return df if not df.empty else pd.DataFrame(columns=["timestamp", "genre", "client_id"])
+# 기존 투표 불러오기
+@st.cache_data(ttl=2)
+def load_votes():
+    rows = sheet.get_all_records()
+    df = pd.DataFrame(rows)
+    return df if not df.empty else pd.DataFrame(columns=["timestamp", "genre", "client_id"])
 
-# votes_df = load_votes()
-# already_voted = client_id in votes_df["client_id"].values
+votes_df = load_votes()
+already_voted = client_id in votes_df["client_id"].values
 
-# # 투표 저장 함수
-# def append_vote(genre: str):
-#     ts = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-#     sheet.append_row([ts, genre, client_id])
-#     st.cache_data.clear()
+# 투표 저장 함수
+def append_vote(genre: str):
+    ts = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    sheet.append_row([ts, genre, client_id])
+    st.cache_data.clear()
 
-# # 투표 UI
-# st.subheader("📥 장르 선택")
-# if already_voted:
-#     st.success("✅ 이미 투표하셨습니다. 감사합니다!")
-# else:
-#     cols = st.columns(len(OPTIONS))
-#     for i, (emoji, genre) in enumerate(OPTIONS.items()):
-#         if cols[i].button(emoji, use_container_width=True):
-#             append_vote(genre)
-#             st.success(f"'{genre}'에 투표되었습니다!")
-#             st.rerun()
+# 투표 UI
+st.subheader("📥 장르 선택")
+if already_voted:
+    st.success("✅ 이미 투표하셨습니다. 감사합니다!")
+else:
+    cols = st.columns(len(OPTIONS))
+    for i, (emoji, genre) in enumerate(OPTIONS.items()):
+        if cols[i].button(emoji, use_container_width=True):
+            append_vote(genre)
+            st.success(f"'{genre}'에 투표되었습니다!")
+            st.rerun()
 
-# st.divider()
+st.divider()
 
-# # 결과 시각화
-# st.subheader("📊 실시간 투표 결과")
-# if votes_df.empty:
-#     st.info("아직 투표가 없습니다. 첫 번째 DJ가 되어보세요 🎧")
-# else:
-#     agg = votes_df["genre"].value_counts().reset_index()
-#     agg.columns = ["genre", "count"]
-#     agg["pct"] = (agg["count"] / agg["count"].sum() * 100).round(1)
+# 결과 시각화
+st.subheader("📊 실시간 투표 결과")
+if votes_df.empty:
+    st.info("아직 투표가 없습니다. 첫 번째 DJ가 되어보세요 🎧")
+else:
+    agg = votes_df["genre"].value_counts().reset_index()
+    agg.columns = ["genre", "count"]
+    agg["pct"] = (agg["count"] / agg["count"].sum() * 100).round(1)
 
-#     chart = alt.Chart(agg).mark_arc(innerRadius=50).encode(
-#         theta="count:Q",
-#         color="genre:N",
-#         tooltip=["genre", "count", "pct"]
-#     ).properties(height=360)
+    chart = alt.Chart(agg).mark_arc(innerRadius=50).encode(
+        theta="count:Q",
+        color="genre:N",
+        tooltip=["genre", "count", "pct"]
+    ).properties(height=360)
 
-#     st.altair_chart(chart, use_container_width=True)
-#     st.markdown(f"**총 투표 수:** {agg['count'].sum()}명")
+    st.altair_chart(chart, use_container_width=True)
+    st.markdown(f"**총 투표 수:** {agg['count'].sum()}명")
